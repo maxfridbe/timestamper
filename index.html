@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+    <style>
+        td:nth-child(1) {
+            font-weight: bold;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        td:nth-child(5) {
+
+            overflow: hidden;
+            text-align: left;
+            display: block;
+            unicode-bidi: embed;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+
+
+
+        table {
+            color: #333;
+            font-family: Helvetica, Arial, sans-serif;
+
+            /* Table reset stuff */
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        td,
+        th {
+            border: 0 none;
+            height: 30px;
+        }
+
+        th {
+            /* Gradient Background */
+            background: linear-gradient(#333 0%, #444 100%);
+            color: #FFF;
+            font-weight: bold;
+
+        }
+
+        td {
+            background: #FAFAFA;
+            text-align: center;
+        }
+
+        /* Zebra Stripe Rows */
+
+        tr:nth-child(even) td {
+            background: #EEE;
+        }
+
+        tr:nth-child(odd) td {
+            background: #FDFDFD;
+        }
+
+        /* Add border-radius to specific cells! */
+        tr:first-child th:nth-child(2) {
+            border-radius: 5px 0 0 0;
+        }
+
+        tr:first-child th:last-child {
+            border-radius: 0 5px 0 0;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #listOfTraces {
+            display: inline-block;
+        }
+
+        #listOfTraces li {
+            display: inline;
+            padding-left: 1em;
+        }
+        
+    </style>
+</head>
+
+<body>
+    
+    <fieldset>
+        <label for="numbins">Number Bins:</label>
+        <input id="numbins" type="number" value="100">
+        <input type="file" id="dbfile">
+        
+        <label for="listOfTraces">Traces:</label>
+        <div id="listOfTraces"></div>
+        <button id="btnAdd">Add Trace</button>
+    </fieldset>
+    
+    <div id='myDiv'>
+        <!-- Plotly chart will be drawn inside this DIV -->
+    </div>
+
+    <pre id="output">Results will be displayed here</pre>
+    <div id="error" class="error"></div>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/codemirror.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.46.0/mode/sql/sql.min.js"></script> -->
+    <script type="module" src="app.js"></script>
+
+</body>
+
+</html>
