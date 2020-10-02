@@ -7,6 +7,7 @@ let data = {
 
 var $outputElm = document.getElementById('output');
 var $errorElm = document.getElementById('error');
+var $prog = document.getElementById("prog");
 let $binselement = (<HTMLInputElement>document.getElementById('numbins'));
 
 var $dbFileElm = <HTMLInputElement>document.getElementById('dbfile');
@@ -50,8 +51,13 @@ function getTrace(messageContents: string, color: string) {
             return [];
         })
         .then(x1 => {
+
+          //  var format = {year: '2-digit', month: '2-digit', day: '2-digit', hour:};
+            let x = x1.map(unix => new Date(unix * 1000));
+
+
             var trace1 = <Partial<Plotly.PlotData>>{
-                x: x1,
+                x: x,
                 name: messageContents,
                 type: "histogram",
                 opacity: 0.3,
@@ -77,6 +83,7 @@ function LoadGraph() {
     for (const q of items) {
         traces.push(getTrace(q, <string>(colorgenerator.next().value)));
     }
+    let numbinstxt = $binselement.value;
 
     // var traces = [getTrace("504"),getTrace('discon')];
     Promise.all(traces).then(arr => {
@@ -88,8 +95,9 @@ function LoadGraph() {
                 exponentformat: 'none',
                 color: "gray",
                 tickangle: 45,
-                dtick: 1000 * 60,
-                tickformat: "Q",
+                nticks:parseInt(numbinstxt)/2
+               // dtick: 1000 * 60,
+               // tickformat: "Q",
 
 
 
@@ -109,7 +117,7 @@ function LoadGraph() {
         Plotly.purge('myDiv');
         Plotly.newPlot('myDiv', arr, layout, {})
             .then(e => {
-
+                $prog.style.display = "none";
                 e.on('plotly_click', function (data: Plotly.PlotMouseEvent) {
                     // console.log(data);
                     var points = data.points.map(p => {
@@ -117,22 +125,23 @@ function LoadGraph() {
                         return idxs.map(i => p.data.x[i]);
                     });
 
-                    var times: number[] = (<any>points).flat();
+                    var times: Date[] = (<any>points).flat();
                     let min, max = 0;
 
                     if (!times.length) {
                         return;
                     }
 
-                    min = Math.min(...times);
-                    max = Math.max(...times);
-                    let from = new Date(min * 1000);
-                    let to = new Date(max * 1000);
+                    min = Math.min.apply(null,times);
+                    max = Math.max.apply(null,times);
+                    let from = new Date(min );
+                    let to = new Date(max );
+
                     let durationms = Math.abs(<any>from - <any>to);
-                    console.log(`Time from ${new Date(min * 1000)} to ${new Date(max * 1000)}`);
+                    console.log(`Time from ${from} to ${to}`);
                     console.log(`Time duration ${durationms / 60000}min`);
 
-                    lib.execSQL(`select PartitionKey,Timestamp,ThreadId,CallingClass,Message from Logs1 where UnixTS >= ${min} and UnixTS <= ${max} order by UnixTS asc`)
+                    lib.execSQL(`select PartitionKey,Timestamp,ThreadId,CallingClass,Message from Logs1 where UnixTS >= ${min/1000} and UnixTS <= ${max/1000} order by UnixTS asc`)
                         .then(renderTables);
                 });
             });
@@ -164,6 +173,7 @@ $binselement.onchange = function () {
 }
 // Load a db from a file
 $dbFileElm.onchange = function () {
+    $prog.style.display = "inline-block";
     var f = $dbFileElm.files[0];
     var r = new FileReader();
     r.onload = function () {
