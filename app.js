@@ -126,6 +126,19 @@ function renderTables(results) {
         $outputElm.appendChild(lib.tableCreate(results[i]));
     }
     console.log(`Rendered ${results.length} Tables`);
+    //tweak based on contents
+    var rows = document.getElementsByTagName("tr");
+    for (const r of rows) {
+        var n = [...r.childNodes];
+        var foundError = n.filter(f => f.textContent.indexOf("Error") != -1);
+        if (foundError.length) {
+            r.classList.add("error");
+        }
+        var foundWarning = n.filter(f => f.textContent.indexOf("Warn") != -1);
+        if (foundWarning.length) {
+            r.classList.add("warn");
+        }
+    }
     return results;
 }
 $btnAddTrace.addEventListener("click", (e) => {

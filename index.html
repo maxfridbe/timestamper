@@ -60,7 +60,18 @@
         }
 
         /* Zebra Stripe Rows */
+        tr.error:nth-child(even) >td, 
+        tr.error:nth-child(odd) >td{
+            background-color: darkred;
+            color:wheat
+        }
 
+        tr.warn:nth-child(even) >td, 
+        tr.warn:nth-child(odd) >td{
+            background-color: wheat;
+            color:black;
+        }
+       
         tr:nth-child(even) td {
             background: #EEE;
         }

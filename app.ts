@@ -52,7 +52,7 @@ function getTrace(messageContents: string, color: string) {
         })
         .then(x1 => {
 
-          //  var format = {year: '2-digit', month: '2-digit', day: '2-digit', hour:};
+            //  var format = {year: '2-digit', month: '2-digit', day: '2-digit', hour:};
             let x = x1.map(unix => new Date(unix * 1000));
 
 
@@ -95,9 +95,9 @@ function LoadGraph() {
                 exponentformat: 'none',
                 color: "gray",
                 tickangle: 45,
-                nticks:parseInt(numbinstxt)/2
-               // dtick: 1000 * 60,
-               // tickformat: "Q",
+                nticks: parseInt(numbinstxt) / 2
+                // dtick: 1000 * 60,
+                // tickformat: "Q",
 
 
 
@@ -132,16 +132,16 @@ function LoadGraph() {
                         return;
                     }
 
-                    min = Math.min.apply(null,times);
-                    max = Math.max.apply(null,times);
-                    let from = new Date(min );
-                    let to = new Date(max );
+                    min = Math.min.apply(null, times);
+                    max = Math.max.apply(null, times);
+                    let from = new Date(min);
+                    let to = new Date(max);
 
                     let durationms = Math.abs(<any>from - <any>to);
                     console.log(`Time from ${from} to ${to}`);
                     console.log(`Time duration ${durationms / 60000}min`);
 
-                    lib.execSQL(`select PartitionKey,Timestamp,ThreadId,CallingClass,Message from Logs1 where UnixTS >= ${min/1000} and UnixTS <= ${max/1000} order by UnixTS asc`)
+                    lib.execSQL(`select PartitionKey,Timestamp,ThreadId,CallingClass,Message from Logs1 where UnixTS >= ${min / 1000} and UnixTS <= ${max / 1000} order by UnixTS asc`)
                         .then(renderTables);
                 });
             });
@@ -154,7 +154,23 @@ function renderTables(results) {
     for (var i = 0; i < results.length; i++) {
         $outputElm.appendChild(lib.tableCreate(results[i]));
     }
-    console.log(`Rendered ${results.length} Tables`)
+    console.log(`Rendered ${results.length} Tables`);
+
+    //tweak based on contents
+    var rows = document.getElementsByTagName("tr");
+    for (const r of rows) {
+        var n = [...r.childNodes];
+
+        var foundError = n.filter(f => f.textContent.indexOf("Error") != -1);
+        if (foundError.length) {
+            r.classList.add("error");
+        }
+        var foundWarning = n.filter(f => f.textContent.indexOf("Warn") != -1);
+        if (foundWarning.length) {
+            r.classList.add("warn");
+        }
+    }
+
     return results;
 }
 
@@ -188,8 +204,8 @@ $dbFileElm.onchange = function () {
 
                     lib.execSQL("pragma table_info('Logs1');").then((d) => {
                         var found = d[0].values.filter(r => r[1] == 'UnixTS').length == 1;
-if(!found){
-    var prepare = `
+                        if (!found) {
+                            var prepare = `
     --sql
 
 delete from Logs1 where Logs1.PartitionKey = 'AppsFramework';
@@ -218,15 +234,15 @@ ALTER TABLE "main"."sqlb_temp_table_1" RENAME TO "Logs1";
 CREATE INDEX [idxts] ON "Logs1" ([UnixTS]);
 
     `
-    console.log("applying transformations");
+                            console.log("applying transformations");
 
-    lib.execSQL(prepare).then(console.log).catch(console.error).then(LoadGraph);
-    return;
-}
+                            lib.execSQL(prepare).then(console.log).catch(console.error).then(LoadGraph);
+                            return;
+                        }
 
-                        
-                            LoadGraph();
-                          
+
+                        LoadGraph();
+
 
 
 

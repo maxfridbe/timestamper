@@ -19,6 +19,7 @@
         "lib": [
             "es6",
             "DOM",
+            "DOM.Iterable",
         ],
         "typeRoots": [
             "node_modules/@types"
