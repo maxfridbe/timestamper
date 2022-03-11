@@ -1,4 +1,4 @@
-# timestamper
+# Timestamper
 A simple analyzer for logs
 
 - You add a "trace" which is a search through logs
