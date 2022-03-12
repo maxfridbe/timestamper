@@ -162,10 +162,9 @@ $dbFileElm.onchange = function () {
             .then(() => {
             console.log("Loaded db");
             dbexists = true;
-            lib.execSQL("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';").then((a) => console.log(a));
             lib.execSQL("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';").then((a) => {
-                if (a[0].values[0] != "Logs1") {
-                    tableName = a[0].values[0];
+                if (a[0].values[0][0] != "Logs1") {
+                    tableName = a[0].values[0][0];
                     alert(`Using table named ${tableName}`);
                 }
                 lib.execSQL(`pragma table_info('${tableName}');`).then((d) => {
