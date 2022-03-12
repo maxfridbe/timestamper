@@ -1,5 +1,6 @@
 import * as lib from './lib.js';
 let dbexists = false;
+var tableName = "Logs1";
 let data = {
     TRACES: ["504 Gateway"]
 };
@@ -36,7 +37,7 @@ var renderTracesList = function () {
 function getTrace(messageContents, color) {
     let numbinstxt = $binselement.value;
     let numbins = Math.max(10, parseInt(numbinstxt));
-    let data1Promise = lib.execSQL(`select UnixTS from Logs1 where message like '%${messageContents}%'`)
+    let data1Promise = lib.execSQL(`select UnixTS from ${tableName} where message like '%${messageContents}%'`)
         //.then(render)
         .then((r) => {
         if (r.length)
@@ -114,7 +115,7 @@ function LoadGraph() {
                 let durationms = Math.abs(from - to);
                 console.log(`Time from ${from} to ${to}`);
                 console.log(`Time duration ${durationms / 60000}min`);
-                lib.execSQL(`select PartitionKey,Timestamp,ThreadId,CallingClass,Message from Logs1 where UnixTS >= ${min / 1000} and UnixTS <= ${max / 1000} order by UnixTS asc`)
+                lib.execSQL(`select PartitionKey,Timestamp,ThreadId,CallingClass,Message from ${tableName} where UnixTS >= ${min / 1000} and UnixTS <= ${max / 1000} order by UnixTS asc`)
                     .then(renderTables);
             });
         });
@@ -161,20 +162,22 @@ $dbFileElm.onchange = function () {
             .then(() => {
             console.log("Loaded db");
             dbexists = true;
+            lib.execSQL("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';").then((a) => console.log(a));
             lib.execSQL("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';").then((a) => {
                 if (a[0].values[0] != "Logs1") {
-                    alert("There needs to be a table named Logs1");
+                    tableName = a[0].values[0];
+                    alert(`Using table named ${tableName}`);
                 }
-                lib.execSQL("pragma table_info('Logs1');").then((d) => {
+                lib.execSQL(`pragma table_info('${tableName}');`).then((d) => {
                     var found = d[0].values.filter(r => r[1] == 'UnixTS').length == 1;
                     if (!found) {
                         var prepare = `
     --sql
 
-delete from Logs1 where Logs1.PartitionKey = 'AppsFramework';
-delete from Logs1 where Logs1.PartitionKey = 'BatchService';
-delete from Logs1 where Logs1.PartitionKey = 'Repository';
-delete from Logs1 where Logs1.PartitionKey = 'OmniService';
+delete from ${tableName} where ${tableName}.PartitionKey = 'AppsFramework';
+delete from ${tableName} where ${tableName}.PartitionKey = 'BatchService';
+delete from ${tableName} where ${tableName}.PartitionKey = 'Repository';
+delete from ${tableName} where ${tableName}.PartitionKey = 'OmniService';
 
 CREATE TABLE "sqlb_temp_table_1" (
 	"PartitionKey"	TEXT,
@@ -189,12 +192,12 @@ CREATE TABLE "sqlb_temp_table_1" (
 
 INSERT INTO "main"."sqlb_temp_table_1" ("CallingClass","LogCode","MachineName","Message","PartitionKey","ThreadId","Timestamp","UnixTS") 
 	SELECT "CallingClass","LogCode","MachineName","Message","PartitionKey","ThreadId",datetime(Timestamp) as "Timestamp",CAST(strftime('%s', datetime(Timestamp)) AS INT) as UnixTS
-	FROM "main"."Logs1";
+	FROM "main"."${tableName}";
 
 
-DROP TABLE "main"."Logs1";
-ALTER TABLE "main"."sqlb_temp_table_1" RENAME TO "Logs1";
-CREATE INDEX [idxts] ON "Logs1" ([UnixTS]);
+DROP TABLE "main"."${tableName}";
+ALTER TABLE "main"."sqlb_temp_table_1" RENAME TO "${tableName}";
+CREATE INDEX [idxts] ON "${tableName}" ([UnixTS]);
 
     `;
                         console.log("applying transformations");

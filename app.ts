@@ -201,7 +201,7 @@ $dbFileElm.onchange = function () {
                 lib.execSQL("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';").then((a)=>console.log(a));
                 lib.execSQL("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';").then((a) => {
                     if (a[0].values[0] != "Logs1") {
-                        tableName = a[0].values[0];
+                        tableName = <string> a[0].values[0];
                         alert(`Using table named ${tableName}`);
                     }
 
