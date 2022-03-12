@@ -210,10 +210,10 @@ $dbFileElm.onchange = function () {
                             var prepare = `
     --sql
 
-delete from ${tableName} where ${tableName}.PartitionKey = 'AppsFramework';
-delete from ${tableName} where ${tableName}.PartitionKey = 'BatchService';
-delete from ${tableName} where ${tableName}.PartitionKey = 'Repository';
-delete from ${tableName} where ${tableName}.PartitionKey = 'OmniService';
+delete from ${tableName} where [${tableName}].[PartitionKey] = 'AppsFramework';
+delete from ${tableName} where [${tableName}].[PartitionKey] = 'BatchService';
+delete from ${tableName} where [${tableName}].[PartitionKey] = 'Repository';
+delete from ${tableName} where [${tableName}].[PartitionKey] = 'OmniService';
 
 CREATE TABLE "sqlb_temp_table_1" (
 	"PartitionKey"	TEXT,
