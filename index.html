@@ -10,6 +10,9 @@
     <title>TimeSpanner</title>
     <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
     <style>
+         * {
+      font-family: sans-serif;
+    }
         table {
             border-collapse: collapse;
         }
@@ -61,7 +64,7 @@
 
         th {
             /* Gradient Background */
-            background: linear-gradient(#333 0%, #444 100%);
+            background: #333;
             color: #FFF;
             font-weight: bold;
 
@@ -143,15 +146,26 @@
     height: 32px;
   }
 }
-
+fieldset{
+    background-color: #efefef;
+    border-radius: 0.4em;
+}
+#numbins{
+    width: 4em;
+}
 
         #listOfTraces {
             display: inline-block;
         }
-
+        #listOfTraces ul{
+            margin:0;
+            padding:0;
+        }
         #listOfTraces li {
             display: inline;
-            padding-left: 1em;
+            background-color: lightgray;
+    padding: .3em;
+    border-radius: 0.4em;
         }
         
     </style>
@@ -165,7 +179,7 @@
         <input type="file" id="dbfile">
         <label for="listOfTraces">Traces:</label>
         <div id="listOfTraces"></div>
-        <button id="btnAdd">Add Trace</button>
+        <button id="btnAdd"> + Add Trace</button>
     </fieldset>
     <div id="prog" class="lds-facebook" style="display: none;"><div></div><div></div><div></div></div>
 

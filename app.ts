@@ -19,7 +19,7 @@ var $btnAddTrace = document.getElementById("btnAdd");
 let dbexists = false;
 var tableName = "Logs";
 let data = {
-    TRACES: ["discon"]
+    TRACES: ["*"]
 };
 
 
@@ -29,8 +29,11 @@ let param = new URLSearchParams(window.location.search);
 var dburl = param.get("db");
 
 if (dburl) {
+    $prog.style.display = "inline-block";
+    $dbFileElm.remove();
     dburl = atob(dburl);
-    loadDbFromUrl(dburl);
+    setTimeout(()=>loadDbFromUrl(dburl),1000);
+    
 }
 
 // Function to render the UI into the DOM
@@ -60,8 +63,14 @@ var renderTracesList = function () {
 function getTrace(messageContents: string, color: string) {
     let numbinstxt = $binselement.value;
     let numbins = Math.max(10, parseInt(numbinstxt));
+
+    var query = `select Timestamp as UnixTS from ${tableName} where message like '%${messageContents}%'`;
+    if (messageContents == "*"){
+        query = `select Timestamp as UnixTS from ${tableName}`;
+    }
+
     let data1Promise = 
-        lib.execSQL(`select Timestamp as UnixTS from ${tableName} where message like '%${messageContents}%'`)
+        lib.execSQL(query)
         //.then(render)
         .then((r: any) => {
             if (r.length)
@@ -78,7 +87,7 @@ function getTrace(messageContents: string, color: string) {
                 x: x,
                 name: messageContents,
                 type: "histogram",
-                opacity: 0.3,
+                opacity: 0.8,
                 marker: {
                     color: color,
                 },
@@ -136,7 +145,7 @@ function LoadGraph() {
                 title: 'GMT',
                 showexponent: 'none',
                 exponentformat: 'none',
-                color: "gray",
+             //   color: "gray",
                 tickangle: 45,
                 nticks: parseInt(numbinstxt) / 2,
                 // dtick: 1000 * 60,
@@ -149,8 +158,8 @@ function LoadGraph() {
 
             },
             showlegend: true,
-            paper_bgcolor: "black",
-            plot_bgcolor: 'black',
+          //  paper_bgcolor: "black",
+         //   plot_bgcolor: 'black',
         };
         Plotly.purge('myDiv');
         Plotly.newPlot('myDiv', arr, layout, {})
