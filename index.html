@@ -10,16 +10,29 @@
     <title>TimeSpanner</title>
     <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
     <style>
-        td:nth-child(1) {
-            font-weight: bold;
-        }
-
         table {
             border-collapse: collapse;
         }
-
-        td:nth-child(5) {
-
+        td:nth-child(1){
+            font-weight: bold;
+            padding-left: 1em;
+            padding-right: 1em;
+        }
+        td:nth-child(2){
+            
+        }
+        td:nth-child(3){
+            text-align: right;
+        }
+        td:nth-child(4){
+            
+        }
+        td:nth-child(5){
+            max-width: 20vw;
+            overflow: hidden;
+            text-align: left;
+        }
+        td:nth-child(6){
             overflow: hidden;
             text-align: left;
             display: block;
@@ -27,10 +40,10 @@
             font-family: monospace;
             white-space: pre-wrap;
             word-break: break-word;
+            max-width: 50vw;
+            max-height: 5.6em;
+            padding-left: 1em;
         }
-
-
-
 
         table {
             color: #333;
@@ -55,33 +68,35 @@
         }
 
         td {
-            background: #FAFAFA;
             text-align: center;
+            overflow: auto;
         }
-
+        tr{
+         border-bottom: solid thin black;
+        }
         /* Zebra Stripe Rows */
-        tr.error:nth-child(even) >td, 
-        tr.error:nth-child(odd) >td{
+        tr.error:nth-child(even) , 
+        tr.error:nth-child(odd) {
             background-color: darkred;
             color:wheat
         }
 
-        tr.warn:nth-child(even) >td, 
-        tr.warn:nth-child(odd) >td{
+        tr.warn:nth-child(even), 
+        tr.warn:nth-child(odd){
             background-color: wheat;
             color:black;
         }
        
-        tr:nth-child(even) td {
-            background: #EEE;
+        tr:nth-child(even) {
+            background-color: #EEE;
         }
 
-        tr:nth-child(odd) td {
-            background: #FDFDFD;
+        tr:nth-child(odd) {
+            background-color: #FDFDFD;
         }
 
         /* Add border-radius to specific cells! */
-        tr:first-child th:nth-child(2) {
+        tr:first-child th:first-child {
             border-radius: 5px 0 0 0;
         }
 
@@ -130,13 +145,6 @@
 }
 
 
-
-
-
-
-
-
-
         #listOfTraces {
             display: inline-block;
         }
@@ -155,7 +163,6 @@
         <label for="numbins">Number Bins:</label>
         <input id="numbins" type="number" value="100">
         <input type="file" id="dbfile">
-        
         <label for="listOfTraces">Traces:</label>
         <div id="listOfTraces"></div>
         <button id="btnAdd">Add Trace</button>

@@ -1,9 +1,4 @@
 import * as lib from './lib.js';
-let dbexists = false;
-var tableName = "Logs1";
-let data = {
-    TRACES: ["504 Gateway"]
-};
 var $outputElm = document.getElementById('output');
 var $errorElm = document.getElementById('error');
 var $prog = document.getElementById("prog");
@@ -13,6 +8,17 @@ var $dbFileElm = document.getElementById('dbfile');
 var $myPlot = document.getElementById('myDiv');
 var $listOfTracesElement = document.getElementById('listOfTraces');
 var $btnAddTrace = document.getElementById("btnAdd");
+let dbexists = false;
+var tableName = "Logs";
+let data = {
+    TRACES: ["discon"]
+};
+let param = new URLSearchParams(window.location.search);
+var dburl = param.get("db");
+if (dburl) {
+    dburl = atob(dburl);
+    loadDbFromUrl(dburl);
+}
 // Function to render the UI into the DOM
 var renderTracesList = function () {
     if ($listOfTracesElement.firstChild)
@@ -37,7 +43,7 @@ var renderTracesList = function () {
 function getTrace(messageContents, color) {
     let numbinstxt = $binselement.value;
     let numbins = Math.max(10, parseInt(numbinstxt));
-    let data1Promise = lib.execSQL(`select UnixTS from ${tableName} where message like '%${messageContents}%'`)
+    let data1Promise = lib.execSQL(`select Timestamp as UnixTS from ${tableName} where message like '%${messageContents}%'`)
         //.then(render)
         .then((r) => {
         if (r.length)
@@ -46,7 +52,7 @@ function getTrace(messageContents, color) {
     })
         .then(x1 => {
         //  var format = {year: '2-digit', month: '2-digit', day: '2-digit', hour:};
-        let x = x1.map(unix => new Date(unix * 1000));
+        let x = x1.map(unix => new Date(unix).toISOString()); //new Date(unix ));
         var trace1 = {
             x: x,
             name: messageContents,
@@ -61,6 +67,28 @@ function getTrace(messageContents, color) {
     });
     return data1Promise;
 }
+// function zeropad(num, maxsize) {
+//     var s = num+"";
+//     var size = (maxsize+"").length;
+//     while (s.length < size) s = "0" + s;
+//     return s;
+//   }
+//   function DateJSON2plotly(jsdate) {
+//     var td = new Date(jsdate);
+//     var dateStr = "" + td.getUTCFullYear() + '-' + zeropad(td.getUTCMonth(),10) + '-' + zeropad(td.getUTCDate(),10) + ' ' +
+//              zeropad(td.getUTCHours(),10) + ':' + zeropad(td.getUTCMinutes(),10) + ':' + zeropad(td.getUTCSeconds(),10);
+//     return dateStr;
+//   }
+//   function ISODateString(unix:number) {
+//     var d = new Date(unix);
+//     function pad(n) {return n<10 ? '0'+n : n}
+//     return d.getUTCFullYear()+'-'
+//          + pad(d.getUTCMonth()+1)+'-'
+//          + pad(d.getUTCDate())+'T'
+//          + pad(d.getUTCHours())+':'
+//          + pad(d.getUTCMinutes())+':'
+//          + pad(d.getUTCSeconds())+'Z'
+// }
 function LoadGraph() {
     if (!dbexists)
         return;
@@ -76,14 +104,15 @@ function LoadGraph() {
         var layout = {
             barmode: "overlay",
             xaxis: {
-                title: 'UnixTs(ms)',
+                title: 'GMT',
                 showexponent: 'none',
                 exponentformat: 'none',
                 color: "gray",
                 tickangle: 45,
-                nticks: parseInt(numbinstxt) / 2
+                nticks: parseInt(numbinstxt) / 2,
                 // dtick: 1000 * 60,
-                // tickformat: "Q",
+                //hoverformat:"%L",
+                //tickformat: "%c"//"%X %-m/%-d/%y", //https://plotly.com/chart-studio-help/date-format-and-time-series/
             },
             yaxis: {
                 title: '# of Event Occurances',
@@ -97,25 +126,46 @@ function LoadGraph() {
         Plotly.newPlot('myDiv', arr, layout, {})
             .then(e => {
             $prog.style.display = "none";
+            e.on('plotly_selected', (d) => {
+                console.log(data);
+            });
             e.on('plotly_click', function (data) {
                 // console.log(data);
                 var points = data.points.map(p => {
                     var idxs = p.pointIndices;
                     return idxs.map(i => p.data.x[i]);
                 });
-                var times = points.flat();
+                var times = points.flat().map(p => new Date(p).getTime());
                 let min, max = 0;
                 if (!times.length) {
                     return;
                 }
                 min = Math.min.apply(null, times);
                 max = Math.max.apply(null, times);
+                if (min == max) {
+                    min -= 100;
+                    max += 100;
+                }
                 let from = new Date(min);
                 let to = new Date(max);
                 let durationms = Math.abs(from - to);
                 console.log(`Time from ${from} to ${to}`);
                 console.log(`Time duration ${durationms / 60000}min`);
-                lib.execSQL(`select PartitionKey,Timestamp,ThreadId,CallingClass,Message from ${tableName} where UnixTS >= ${min / 1000} and UnixTS <= ${max / 1000} order by UnixTS asc`)
+                //SELECT "_rowid_","id","PartitionKey","MachineName",strftime('%Y-%m-%d %H:%M:%S.', "Timestamp"/1000, 'unixepoch') || ("Timestamp"%1000) AS "Timestamp","Message","CallingClass","LogCode","ThreadId" FROM "main"."Logs" WHERE PartitionKey LIKE '%a%' ESCAPE '\' ORDER BY "Timestamp" DESC LIMIT 0, 49999;
+                lib.execSQL(`
+                            select 
+                                PartitionKey,
+                                LogCode,
+                                strftime('%Y-%m-%d %H:%M:%S.', "Timestamp"/1000, 'unixepoch') || ("Timestamp"%1000) AS "Timestamp", 
+                                --"Timestamp" AS UnixTS,
+                                ThreadId,
+                                CallingClass,
+                                Message 
+                            from ${tableName} 
+                            where 
+                                Timestamp >= ${min} 
+                                and Timestamp <= ${max} 
+                            order by Timestamp asc`)
                     .then(renderTables);
             });
         });
@@ -143,12 +193,11 @@ function renderTables(results) {
     return results;
 }
 $btnAddTrace.addEventListener("click", (e) => {
-    let res = prompt("Enter trace text in the message", "504 Gateway");
+    let res = prompt("Enter trace text in the message", "discon");
     data.TRACES.push(res);
     renderTracesList();
     LoadGraph();
 });
-renderTracesList();
 $binselement.onchange = function () {
     LoadGraph();
 };
@@ -158,59 +207,100 @@ $dbFileElm.onchange = function () {
     var f = $dbFileElm.files[0];
     var r = new FileReader();
     r.onload = function () {
-        lib.loadSqliteFromBuffer(r.result)
-            .then(() => {
-            console.log("Loaded db");
-            dbexists = true;
-            lib.execSQL("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';").then((a) => {
-                if (a[0].values[0][0] != "Logs1") {
-                    tableName = a[0].values[0][0];
-                    alert(`Using table named ${tableName}`);
-                }
-                lib.execSQL(`pragma table_info('${tableName}');`).then((d) => {
-                    var found = d[0].values.filter(r => r[1] == 'UnixTS').length == 1;
-                    if (!found) {
-                        var prepare = `
-    --sql
-
-delete from ${tableName} where [${tableName}].[PartitionKey] = 'AppsFramework';
-delete from ${tableName} where [${tableName}].[PartitionKey] = 'BatchService';
-delete from ${tableName} where [${tableName}].[PartitionKey] = 'Repository';
-delete from ${tableName} where [${tableName}].[PartitionKey] = 'OmniService';
-
-CREATE TABLE "sqlb_temp_table_1" (
-	"PartitionKey"	TEXT,
-	"Timestamp"	TEXT,
-	"UnixTS" INTEGER,
-	"MachineName"	TEXT,
-	"Message"	TEXT,
-	"CallingClass"	TEXT,
-	"ThreadId"	INTEGER,
-	"LogCode"	INTEGER
-);
-
-INSERT INTO "main"."sqlb_temp_table_1" ("CallingClass","LogCode","MachineName","Message","PartitionKey","ThreadId","Timestamp","UnixTS") 
-	SELECT "CallingClass","LogCode","MachineName","Message","PartitionKey","ThreadId",datetime(Timestamp) as "Timestamp",CAST(strftime('%s', datetime(Timestamp)) AS INT) as UnixTS
-	FROM "main"."${tableName}";
-
-
-DROP TABLE "main"."${tableName}";
-ALTER TABLE "main"."sqlb_temp_table_1" RENAME TO "${tableName}";
-CREATE INDEX [idxts] ON "${tableName}" ([UnixTS]);
-
-    `;
-                        console.log("applying transformations");
-                        lib.execSQL(prepare).then(console.log).catch(console.error).then(LoadGraph);
-                        return;
-                    }
-                    LoadGraph();
-                });
-                //there is a logs1, check for structure
-            });
-        });
+        loadBuffer((r.result));
     };
     r.readAsArrayBuffer(f);
 };
+function loadDbFromUrl(dburl) {
+    // fetch(dburl, {
+    //     "headers": {
+    //       "Access-Control-Allow-Origin":"*",
+    //       "accept": "*/*",
+    //       "accept-language": "en-US,en;q=0.9",
+    //       "cache-control": "no-cache",
+    //       "pragma": "no-cache",
+    //     },
+    //     "body": null,
+    //     "method": "GET",
+    //     "mode": "no-cors",
+    //     "credentials": "omit"
+    //   })
+    //   .then((response)=>{
+    //         console.log(response);
+    //   });
+    return fetch(dburl, {
+        mode: 'cors',
+        headers: {
+            'Access-Control-Allow-Origin': '*'
+        }
+    })
+        .then((response) => {
+        //console.log(response);
+        return response.arrayBuffer();
+    })
+        .then((buffer) => loadBuffer(buffer));
+    // const req = new XMLHttpRequest();
+    // req.open("GET", dburl, true);
+    // //req.responseType = "blob";
+    // req.setRequestHeader("Access-Control-Allow-Origin","*");
+    // req.onload = (event) => {
+    //   const blob = req.response;
+    //   loadBuffer(blob);
+    // };
+    // req.send();
+}
+;
+function loadBuffer(r) {
+    lib.loadSqliteFromBuffer(r)
+        .then(() => {
+        console.log("Loaded db");
+        dbexists = true;
+        lib.execSQL("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';").then((a) => {
+            if (a[0].values[0][0] != tableName) {
+                tableName = a[0].values[0][0];
+                alert(`Using table named ${tableName}`);
+            }
+            LoadGraph();
+        });
+    });
+}
+function downloadURI(uri, name) {
+    var link = document.createElement("a");
+    link.download = name;
+    link.href = uri;
+    link.click();
+}
+renderTracesList();
+//                 lib.execSQL(`pragma table_info('${tableName}');`).then((d) => {
+//                     var found = d[0].values.filter(r => r[1] == 'UnixTS').length == 1;
+//                     if (!found) {
+//                         var prepare = `
+//     --sql
+// delete from ${tableName} where [${tableName}].[PartitionKey] = 'AppsFramework';
+// delete from ${tableName} where [${tableName}].[PartitionKey] = 'BatchService';
+// delete from ${tableName} where [${tableName}].[PartitionKey] = 'Repository';
+// delete from ${tableName} where [${tableName}].[PartitionKey] = 'OmniService';
+// CREATE TABLE "sqlb_temp_table_1" (
+// 	"PartitionKey"	TEXT,
+// 	"Timestamp"	TEXT,
+// 	"UnixTS" INTEGER,
+// 	"MachineName"	TEXT,
+// 	"Message"	TEXT,
+// 	"CallingClass"	TEXT,
+// 	"ThreadId"	INTEGER,
+// 	"LogCode"	INTEGER
+// );
+// INSERT INTO "main"."sqlb_temp_table_1" ("CallingClass","LogCode","MachineName","Message","PartitionKey","ThreadId","Timestamp","UnixTS") 
+// 	SELECT "CallingClass","LogCode","MachineName","Message","PartitionKey","ThreadId",datetime(Timestamp) as "Timestamp",CAST(strftime('%s', datetime(Timestamp)) AS INT) as UnixTS
+// 	FROM "main"."${tableName}";
+// DROP TABLE "main"."${tableName}";
+// ALTER TABLE "main"."sqlb_temp_table_1" RENAME TO "${tableName}";
+// CREATE INDEX [idxts] ON "${tableName}" ([UnixTS]);
+//     `;
+//                         console.log("applying transformations");
+//                         lib.execSQL(prepare).then(console.log).catch(console.error).then(LoadGraph);
+//                         return;
+//                     }
 // Save the db to a file
 // function savedb() {
 //     worker.onmessage = function (event) {
@@ -231,7 +321,7 @@ CREATE INDEX [idxts] ON "${tableName}" ([UnixTS]);
 //     tic();
 //     worker.postMessage({ action: 'export' });
 // }
-//#region 
+//#region
 //let data1Promise = fetch('test.json').then(data => data.json());
 // let data2Promise = fetch('test2.json').then(data => data.json());
 // let data3Promise = fetch('test3.json').then(data => data.json());
